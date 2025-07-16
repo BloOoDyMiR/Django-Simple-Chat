@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Messenger{% endblock %}</title>
+    <link href="/static/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/jquery-3.7.1.min.js"></script>
+    <script src="/static/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            background-color: #f5f6fa;
+            font-family: 'Arial', sans-serif;
+        }
+        .chat-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .profile-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+            cursor: pointer; /* Indicate clickable */
+        }
+        .profile-img-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer; /* Indicate clickable */
+        }
+        .profile-img-large:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            transition: background-color 0.2s ease;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+
+        }
+.sent {
+    background-color: rgba(209, 231, 221, 0.3); /* translucent greenish */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* for Safari */
+    margin-left: 50%;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.received {
+    background-color: rgba(248, 215, 218, 0.3); /* translucent reddish */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    margin-right: 50%;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .btn-outline-primary:hover {
+            border-color: #0056b3;
+            color: #0056b3;
+            transform: translateY(-2px);
+        }
+        /* Navbar Styles */
+        .navbar {
+            background: linear-gradient(90deg, #007bff, #00c4ff);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 15px 20px;
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff !important;
+            transition: color 0.3s ease;
+        }
+        .navbar-brand:hover {
+            color: #f0f0f0 !important;
+        }
+        .nav-link {
+            color: #fff !important;
+            font-size: 1.1rem;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .navbar-text {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 500;
+            margin-right: 20px;
+        }
+        .navbar-text::before {
+            content: '👋 ';
+        }
+        /* File Upload Button Styles */
+        .custom-file-upload {
+            display: inline-block;
+            width: 100%;
+        }
+        .btn-file-upload {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #007bff, #00c4ff);
+            color: #fff;
+            border: none;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .btn-file-upload:hover {
+            background: linear-gradient(90deg, #0056b3, #0096cc);
+            transform: translateY(-2px);
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+        }
+        .file-upload-text::before {
+            content: '📷 ';
+            margin-right: 8px;
+        }
+        /* Image Preview Overlay */
+        .image-preview-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .image-preview {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+            transition: transform 0.3s ease;
+            transform: scale(1);
+        }
+        .image-preview-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #fff;
+            border: none;
+            font-size: 1.5rem;
+            padding: 5px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .image-preview-close:hover {
+            background: #ddd;
+        }
+        .chat-media {
+          max-width: 200px;
+          border: 2px solid #ccc;
+          border-radius: 10px;
+          margin-top: 5px;
+          cursor: pointer;
+          transition: transform 0.3s ease;
+        }
+
+        .chat-media:hover {
+          transform: scale(1.03);
+        }
+
+        .chat-audio, .chat-file {
+          margin-top: 5px;
+          display: block;
+        }
+
+
+        /* Responsive style for mobile */
+        @media screen and (max-width: 600px) {
+            .chat-audio, .chat-file {
+               max-width: 108%;
+                margin-top: 5px;
+                display: block;
+                margin-left: -4%;
+            }
+            .message{
+                margin-left: 40%;
+
+            }
+          .chat-media {
+            max-width: 100%;
+          }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-text {
+                margin: 10px 0;
+            }
+            .nav-link {
+                padding: 8px 10px;
+            }
+            .profile-img-large {
+                width: 100px;
+                height: 100px;
+            }
+            .btn-file-upload {
+                padding: 8px 12px;
+            }
+            .image-preview {
+                max-width: 95%;
+                max-height: 70%;
+            }
+            @media screen and (max-width: 600px) {
+          .chat-bubble {
+            font-size: 14px; /* or smaller */
+            padding: 8px 10px;
+            max-width: 80%; /* narrower bubbles */
+            border-radius: 10px;
+          }
+
+          .chat-bubble.sent {
+            background-color: #d1ffd1; /* light green for sent */
+
+          }
+
+          .chat-bubble.received {
+            background-color: #ffd1d1; /* light red for received */
+          }
+
+          .chat-container {
+            padding: 5px; /* reduce overall padding */
+
+          }
+
+          .chat-message-content {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-size: 13px; /* scale text a bit more */
+          }
+        }
+
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% if user.is_authenticated %}
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{% url 'home' %}">BloOoDyMiR Messenger</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'home' %}">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'create_channel' %}">Create Channel</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'profile' %}">Profile</a>
+                        </li>
+                        <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                        </li>
+                    </ul>
+                    </ul>
+                    <span class="navbar-text">
+                        Welcome, {{ user.get_full_name|default:user.username }}
+                    </span>
+
+                </div>
+            </div>
+        </nav>
+    {% endif %}
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+    <div class="image-preview-overlay" id="image-preview-overlay">
+        <button class="image-preview-close" id="image-preview-close">&times;</button>
+        <img class="image-preview" id="image-preview" src="" alt="Image Preview">
+    </div>
+    <!-- Modal Preview Box -->
+    <div id="mediaPreviewModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:9999;">
+      <span onclick="closePreview()" style="position:absolute; top:20px; right:30px; font-size:40px; color:white; cursor:pointer;">&times;</span>
+      <div id="mediaPreviewContent"></div>
+    </div>
+
+    <script>
+    function previewMedia(el) {
+      const modal = document.getElementById('mediaPreviewModal');
+      const content = document.getElementById('mediaPreviewContent');
+      const clone = el.cloneNode(true);
+      clone.style.maxWidth = "90vw";
+      clone.style.maxHeight = "90vh";
+      clone.removeAttribute("onclick"); // prevent nested clicks
+      content.innerHTML = '';
+      content.appendChild(clone);
+      modal.style.display = 'flex';
+    }
+
+    function closePreview() {
+      document.getElementById('mediaPreviewModal').style.display = 'none';
+    }
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            $('.profile-img').on('click', function() {
+                const src = $(this).attr('src');
+                const alt = $(this).attr('alt');
+                $('#image-preview').attr('src', src).attr('alt', alt);
+                $('#image-preview-overlay').css('display', 'flex');
+            });
+
+
+            $('#image-preview-close, #image-preview-overlay').on('click', function(e) {
+                if (e.target === this || $(e.target).hasClass('image-preview-close')) {
+                    $('#image-preview-overlay').css('display', 'none');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

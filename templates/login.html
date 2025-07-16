@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block content %}
+
+<style>
+  .chat-container {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 30px;
+    background: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .chat-container h2 {
+    text-align: center;
+    color: #007bff;
+    margin-bottom: 25px;
+    font-weight: 700;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  form p {
+    margin-bottom: 15px;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 16px;
+    border: 1.8px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+  }
+
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  input[type="email"]:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+
+  .btn-primary {
+    padding: 12px;
+    font-size: 18px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+
+  .alert {
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+  }
+</style>
+
+<div class="chat-container">
+    <h2>Login</h2>
+    {% if messages %}
+        <div class="alert alert-info">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        </div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+</div>
+{% endblock %}

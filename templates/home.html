@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="chat-container">
+{% if messages %}
+        <div class="alert alert-info">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        </div>
+        <hr style="border-top: 2px solid #007bff; margin: 20px 0;">
+
+    {% endif %}
+
+    <h2>Search</h2>
+    <form method="get" action="{% url 'search' %}">
+        <input type="text" name="q" value="{% if query %}{{ query }}{% endif %}" class="form-control" placeholder="Search users or channels...">
+
+        <br> <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+<hr style="border-top: 2px solid #007bff; margin: 20px 0;">
+    <h3>Users</h3>
+    <ul class="list-group" id="user-list">
+        {% for user in users %}
+            <li class="list-group-item" data-user-id="{{ user.id }}">
+                <img src="{{ user.get_profile_image }}" alt="{{ user.get_full_name|default:user.username }}" class="profile-img">
+                <a href="{% url 'private_chat' user.id %}">{{ user.get_full_name|default:user.username }}</a>
+                {% if user.unread_count %}
+                    <span class="badge bg-danger" data-unread-count>{{ user.unread_count }}</span>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li class="list-group-item">No users found.</li>
+        {% endfor %}
+    </ul>
+    <hr style="border-top: 2px solid #007bff; margin: 20px 0;">
+    <h3>Channels {% if channels %}{% if channels|length > 0 %}({{ channels|length }}){% endif %}{% endif %}</h3>
+    <ul class="list-group" id="channel-list">
+        {% for channel in channels %}
+            <li class="list-group-item" data-channel-id="{{ channel.id }}">
+                <img src="{{ channel.get_channel_image }}" alt="{{ channel.name }}" class="profile-img">
+                <a href="{% url 'channel_chat' channel.id %}">{{ channel.name }} {% if channel.is_group_chat %}(Group){% endif %}</a>
+                {% if channel.unread_count %}
+                    <span class="badge bg-danger" data-unread-count>{{ channel.unread_count }}</span>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li class="list-group-item">No channels found.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'create_channel' %}" class="btn btn-primary mt-3">Create Channel</a>
+</div>
+<script>
+$(document).ready(function() {
+    function updateUnreadCounts() {
+        $.ajax({
+            url: "{% url 'get_unread_counts' %}",
+            dataType: 'json',
+            success: function(data) {
+                if (data.users) {
+                    $('#user-list li').each(function() {
+                        let $li = $(this);
+                        let userId = $li.data('user-id');
+                        let userData = data.users.find(u => u.id === userId);
+                        let $badge = $li.find('[data-unread-count]');
+                        if (userData && userData.unread_count > 0) {
+                            if ($badge.length) {
+                                $badge.text(userData.unread_count);
+                            } else {
+                                $li.append(`<span class="badge bg-danger" data-unread-count>${userData.unread_count}</span>`);
+                            }
+                        } else {
+                            $badge.remove();
+                        }
+                    });
+                }
+                if (data.channels) {
+                    $('#channel-list li').each(function() {
+                        let $li = $(this);
+                        let channelId = $li.data('channel-id');
+                        let channelData = data.channels.find(c => c.id === channelId);
+                        let $badge = $li.find('[data-unread-count]');
+                        if (channelData && channelData.unread_count > 0) {
+                            if ($badge.length) {
+                                $badge.text(channelData.unread_count);
+                            } else {
+                                $li.append(`<span class="badge bg-danger" data-unread-count>${channelData.unread_count}</span>`);
+                            }
+                        } else {
+                            $badge.remove();
+                        }
+                    });
+                }
+            },
+            error: function(xhr) {
+                console.log("Error fetching unread counts:", xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error');
+            }
+        });
+    }
+
+    // Poll every 5 seconds
+    setInterval(updateUnreadCounts, 5000);
+    updateUnreadCounts(); // Initial call
+});
+</script>
+{% endblock %}

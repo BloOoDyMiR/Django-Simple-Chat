@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Add Member to {{ channel.name }}{% endblock %}
+{% block content %}
+<div class="chat-container">
+    <h2>Add Member to {{ channel.name }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="user_id">Select User</label>
+            <select name="user_id" class="form-control" required>
+                {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+</div>
+{% endblock %}

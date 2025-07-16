@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="chat-container">
+    <div href="{{ user.get_profile_image }}" class="card shadow-lg" style="max-width: 500px; margin: 40px auto; padding: 30px; border-radius: 15px; transition: transform 0.3s ease;">
+        <div class="text-center mb-4">
+            <img src="{{ user.get_profile_image }}" alt="{{ user.get_full_name|default:user.username }}" class="profile-img-large" style="width: 120px; height: 120px; border: 3px solid #007bff; cursor: pointer;" id="current-profile-image">
+        </div>
+        <h2 class="card-title text-center mb-4" style="color: #333; font-weight: 600;">Edit Your Profile</h2>
+        {% if messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data" id="profile-form">
+            {% csrf_token %}
+            <div class="mb-4">
+                {% for field in form %}
+                    {% if field.name == 'profile_image' %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">Profile Image</label>
+                            <div class="custom-file-upload">
+                                <label for="{{ field.id_for_label }}" class="btn btn-file-upload">
+                                    <span class="file-upload-text">Choose Profile Image</span>
+                                    <input type="file" name="{{ field.name }}" id="{{ field.id_for_label }}" accept="image/*" style="display: none;">
+                                </label>
+                            </div>
+                            <div id="image-preview" class="text-center mt-3" style="display: none;">
+                                <img id="preview-img" src="#" alt="Image Preview" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #00c4ff;">
+                            </div>
+                            {% if field.errors %}
+                                <div class="text-danger">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg" style="transition: background-color 0.3s ease, transform 0.2s ease;">Save Changes</button>
+                <a href="{% url 'change_password' %}" class="btn btn-outline-primary btn-lg" style="transition: border-color 0.3s ease, transform 0.2s ease;">Change Password</a>
+            </div>
+        </form>
+    </div>
+    <div id="image-preview-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); justify-content: center; align-items: center; z-index: 1000;">
+        <span id="image-preview-close" style="position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer;">&times;</span>
+        <img id="overlay-image" src="#" alt="Image Preview" style="max-width: 80%; max-height: 80%; object-fit: contain;">
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle profile image preview on file input change
+    document.getElementById('id_profile_image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewImg = document.getElementById('preview-img');
+                previewImg.src = e.target.result;
+                document.getElementById('image-preview').style.display = 'block';
+                document.getElementById('current-profile-image').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('current-profile-image').style.display = 'block';
+        }
+    });
+
+    // Handle profile image click to show overlay
+    document.getElementById('current-profile-image').addEventListener('click', function() {
+        const src = this.src;
+        const alt = this.alt;
+        document.getElementById('overlay-image').src = src;
+        document.getElementById('overlay-image').alt = alt;
+        document.getElementById('image-preview-overlay').style.display = 'flex';
+    });
+
+    // Handle overlay close
+    const overlay = document.getElementById('image-preview-overlay');
+    const closeButton = document.getElementById('image-preview-close');
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay || e.target === closeButton) {
+            overlay.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

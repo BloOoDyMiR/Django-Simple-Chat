@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Chat{% endblock %}
+{% block content %}
+<div class="chat-container">
+    <h2>
+        {% if channel %}
+            {{ channel.name }} {% if channel.is_group_chat %}(Group){% endif %}
+            <img src="{{ channel.get_channel_image }}" alt="{{ channel.name }}" class="profile-img">
+        {% else %}
+            Chat with {{ recipient.get_full_name|default:recipient.username }}
+            <img src="{{ recipient.get_profile_image }}" alt="{{ recipient.get_full_name|default:recipient.username }}" class="profile-img">
+        {% endif %}
+    </h2>
+    <div id="chat-log" style="height: 400px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px;">
+        {% for message in messages %}
+            <div class="message {% if message.sender == user %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}">
+                <img src="{{ message.sender.get_profile_image }}" alt="{{ message.sender.get_full_name|default:message.sender.username }}" class="profile-img">
+
+                <strong>{{ message.sender.get_full_name|default:message.sender.username }}</strong>:
+                {% if message.content %}
+                    {{ message.content }}
+                {% endif %}
+                <br>
+                {% if message.file %}
+      <br>
+      {% if message.file.name|lower|slice:"-4:" in ".jpg,.png,.jpeg,.gif" %}
+        <img src="{{ message.file.url }}"
+             alt="Shared image"
+             class="chat-media chat-image"
+             onclick="previewMedia(this)">
+      {% elif message.file.name|lower|slice:"-4:" in ".mp4,.webm" %}
+        <video controls
+               src="{{ message.file.url }}"
+               class="chat-media chat-video"
+               onclick="previewMedia(this)">
+        </video>
+      {% elif message.file.name|lower|slice:"-4:" in ".mp3,.wav" %}
+        <audio controls src="{{ message.file.url }}" class="chat-audio"></audio>
+      {% else %}
+        <a href="{{ message.file.url }}" download class="chat-file">{{ message.file.name }}</a>
+      {% endif %}
+    {% endif %}
+
+                <hr><small>{{ message.timestamp|date:"Y-m-d H:i" }}</small>
+            </div>
+        {% endfor %}
+    </div>
+    <form id="chat-form" method="post" action="{% url 'send_message' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if channel %}
+            <input type="hidden" name="channel_id" value="{{ channel.id }}">
+        {% elif recipient %}
+            <input type="hidden" name="recipient_id" value="{{ recipient.id }}">
+        {% endif %}
+        <div class="mb-3">
+            <textarea name="content" placeholder="Type a message..." class="form-control"></textarea>
+        </div>
+        <div class="mb-3">
+            <div class="custom-file-upload">
+                <label for="id_file" class="btn btn-file-upload">
+                    <span class="file-upload-text">Upload Media</span>
+                    <input type="file" name="file" id="id_file" accept="image/*,video/*,audio/*" style="display: none;">
+                </label>
+            </div>
+            <div id="file-preview" class="text-center mt-3" style="display: none;">
+                <img id="preview-img" src="#" alt="File Preview" style="width: 100px; height: 100px; border-radius: 10px; object-fit: cover; border: 2px solid #00c4ff;">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+</div>
+<script>
+$(document).ready(function() {
+    $("#chat-log").scrollTop($("#chat-log")[0].scrollHeight);
+
+    $("#chat-form").on("submit", function(e) {
+        if (!$("[name='content']").val() && !$("[name='file']").val()) {
+            e.preventDefault();
+            alert("Please enter a message or select a file.");
+        }
+    });
+
+    $("#id_file").on("change", function(e) {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $("#preview-img").attr("src", e.target.result);
+                $("#file-preview").css("display", "block");
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $("#file-preview").css("display", "none");
+        }
+    });
+
+    let lastMessageId = Math.max(0, ...Array.from($(".message").map((_, el) => $(el).data("message-id") || 0)));
+    setInterval(function() {
+        $.ajax({
+            url: "{% url 'get_messages' %}",
+            data: {
+                {% if channel %}
+                    channel_id: {{ channel.id }},
+                {% elif recipient %}
+                    recipient_id: {{ recipient.id }},
+                {% endif %}
+                last_message_id: lastMessageId
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(function(msg) {
+                        let messageHtml = `
+                            <div class="message ${msg.is_sent ? 'sent' : 'received'}" data-message-id="${msg.id}">
+                                <img src="${msg.sender_profile_image}" alt="${msg.sender}" class="profile-img">
+                                <strong>${msg.sender}</strong>: ${msg.content}
+                                ${msg.file_url ? `
+                                    <br>
+                                    ${msg.file_type === 'image' ? `<img src="${msg.file_url}" alt="Shared image" style="max-width: 200px;">` :
+                                      msg.file_type === 'video' ? `<video controls src="${msg.file_url}" style="max-width: 200px;"></video>` :
+                                      msg.file_type === 'audio' ? `<audio controls src="${msg.file_url}"></audio>` :
+                                      `<a href="${msg.file_url}" download>${msg.file_url.split('/').pop()}</a>`}
+                                ` : ''}
+                                <br><small>${msg.timestamp}</small>
+                            </div>
+                        `;
+                        $("#chat-log").append(messageHtml);
+                        lastMessageId = Math.max(lastMessageId, msg.id);
+                    });
+                    $("#chat-log").scrollTop($("#chat-log")[0].scrollHeight);
+                    $("#file-preview").css("display", "none"); // Reset preview after sending
+                }
+            },
+            error: function(xhr) {
+                console.log("Error fetching messages:", xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error');
+            }
+        });
+    }, 5000);
+});
+</script>
+{% endblock %}
