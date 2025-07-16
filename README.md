@@ -19,16 +19,16 @@ This is a lightweight real-time messenger web app using Django framework. It all
 ## 📸 Screenshots
 
 ### 🏠 Home Page
-![Home Page](Screenshot 2025-07-16 135449.png)
+![Home Page](home.png)
 
 ### 💬 Chat Page
-![Chat Page](Screenshot 2025-07-16 135517.png)
+![Chat Page](chat.png)
 
 ### 🔐 Login Page
-![Login Page](Screenshot 2025-07-16 135406.png)
+![Login Page](login.png)
 
 ### 🧍 User Profile 
-![User Profile](Screenshot 2025-07-16 135552.png)
+![User Profile](profile.png)
 
 
 ---
